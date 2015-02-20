@@ -96,8 +96,15 @@ class Plugin extends AbstractPlugin
      */
     public function handleEvent(Event $event, Queue $queue)
     {
+        if (!$this->iterator->valid()) {
+            $queue->ircQuit('All specified alternate nicks are in use');
+        }
+
         $nick = $this->iterator->current();
         $this->iterator->next();
+
+        $this->logger->debug("[AltNick] Switching nick to '$nick'");
         $queue->ircNick($nick);
+        $event->getConnection()->setNickname($nick);
     }
 }
