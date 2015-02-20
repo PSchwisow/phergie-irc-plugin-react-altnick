@@ -2,7 +2,7 @@
 
 [Phergie](http://github.com/phergie/phergie-irc-bot-react/) plugin for switching to alternate nicks when primary is not available.
 
-[![Build Status](https://secure.travis-ci.org/PSchwisow/phergie-irc-plugin-react-altnick.png?branch=master)](http://travis-ci.org/PSchwisow/phergie-irc-plugin-react-altnick)
+[![Build Status](https://secure.travis-ci.org/PSchwisow/phergie-irc-plugin-react-altnick.png?branch=master)](http://travis-ci.org/PSchwisow/phergie-irc-plugin-react-altnick) [![Code Climate](https://codeclimate.com/github/PSchwisow/phergie-irc-plugin-react-altnick/badges/gpa.svg)](https://codeclimate.com/github/PSchwisow/phergie-irc-plugin-react-altnick) [![Test Coverage](https://codeclimate.com/github/PSchwisow/phergie-irc-plugin-react-altnick/badges/coverage.svg)](https://codeclimate.com/github/PSchwisow/phergie-irc-plugin-react-altnick)
 
 ## Install
 
