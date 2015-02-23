@@ -28,7 +28,7 @@ class Plugin extends AbstractPlugin
      *
      * @var ArrayIterator
      */
-    private $iterator = [];
+    private $iterator;
 
     /**
      * Accepts plugin configuration.
@@ -61,7 +61,7 @@ class Plugin extends AbstractPlugin
             throw new \InvalidArgumentException('setNicks method expects an array');
         }
 
-        array_filter(
+        $nicks = array_filter(
             $nicks,
             function ($nick) {
                 // @todo make this validation a bit more strict
@@ -98,6 +98,7 @@ class Plugin extends AbstractPlugin
     {
         if (!$this->iterator->valid()) {
             $queue->ircQuit('All specified alternate nicks are in use');
+            return;
         }
 
         $nick = $this->iterator->current();
