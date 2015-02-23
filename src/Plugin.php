@@ -61,12 +61,18 @@ class Plugin extends AbstractPlugin
             throw new \InvalidArgumentException('setNicks method expects an array');
         }
 
+        $special = preg_quote('[]\`_^{|}');
         $nicks = array_filter(
-            $nicks,
-            function ($nick) {
-                // @todo make this validation a bit more strict
-                return (is_string($nick) && strlen($nick) > 0);
-            }
+            array_map(
+                function ($nick) use ($special) {
+                    if (is_string($nick)) {
+                        $nick = trim($nick);
+                        return (preg_match("/^[a-z$special][a-z0-9$special-]*$/i", $nick) ? $nick : null);
+                    }
+                    return null;
+                },
+                $nicks
+            )
         );
 
         if (empty($nicks)) {

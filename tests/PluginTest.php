@@ -54,11 +54,13 @@ class PluginTest extends \PHPUnit_Framework_TestCase
             // valid
             'Foo',
             'Foo_Bar',
-            '1235',
+            'a1235',
+            'x-[]\`_^{|}',
 
             // NOT valid
             null,
             '',
+            '1235',
             12345,
             $this,
         ];
@@ -71,7 +73,7 @@ class PluginTest extends \PHPUnit_Framework_TestCase
 
         $this->assertInstanceOf('Iterator', $iterator);
         $this->assertInstanceOf('Countable', $iterator); // needed for this test only
-        $this->assertEquals(3, $iterator->count()); // adjust number to match the number of valid nicks defined above
+        $this->assertEquals(4, $iterator->count()); // adjust number to match the number of valid nicks defined above
     }
 
     /**
