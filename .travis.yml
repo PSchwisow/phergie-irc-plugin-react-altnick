@@ -6,10 +6,6 @@ php:
   - 5.6
   - hhvm
 
-matrix:
-  allow_failures:
-    - php: hhvm
-
 addons:
   code_climate:
     repo_token: 78ee100adff3457806b7339b8252594fbb81d3d2235257f702fc18a8fd6c4051
