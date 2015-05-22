@@ -128,7 +128,7 @@ class Plugin extends AbstractPlugin
 
     protected function getIterator(ConnectionInterface $connection)
     {
-        if (is_null($this->iterators)) {
+        if ($this->iterators === null) {
             $this->iterators = new SplObjectStorage();
         }
 
