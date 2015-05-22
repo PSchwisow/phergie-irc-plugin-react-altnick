@@ -67,13 +67,12 @@ class PluginTest extends \PHPUnit_Framework_TestCase
         $plugin = new Plugin(['nicks' => $nicks]);
 
         $reflectionClass = new \ReflectionClass(get_class($plugin));
-        $reflectionProperty = $reflectionClass->getProperty('iterator');
+        $reflectionProperty = $reflectionClass->getProperty('nicks');
         $reflectionProperty->setAccessible(true);
-        $iterator = $reflectionProperty->getValue($plugin);
+        $nicksValue = $reflectionProperty->getValue($plugin);
 
-        $this->assertInstanceOf('Iterator', $iterator);
-        $this->assertInstanceOf('Countable', $iterator); // needed for this test only
-        $this->assertEquals(4, $iterator->count()); // adjust number to match the number of valid nicks defined above
+        $this->assertInternalType('array', $nicksValue);
+        $this->assertCount(4, $nicksValue); // adjust number to match the number of valid nicks defined above
     }
 
     /**
@@ -101,33 +100,55 @@ class PluginTest extends \PHPUnit_Framework_TestCase
      */
     public function testHandleEvent()
     {
-        $event = $this->getMockEvent();
-        $connection = $this->getMockConnection();
-        Phake::when($event)->getConnection()->thenReturn($connection);
-        $queue = $this->getMockEventQueue();
+        $event1 = $this->getMockEvent();
+        $connection1 = $this->getMockConnection();
+        Phake::when($event1)->getConnection()->thenReturn($connection1);
+        $queue1 = $this->getMockEventQueue();
+
+        $event2 = $this->getMockEvent();
+        $connection2 = $this->getMockConnection();
+        Phake::when($event2)->getConnection()->thenReturn($connection2);
+        $queue2 = $this->getMockEventQueue();
+
         $logger = $this->getMockLogger();
 
         $plugin = new Plugin(['nicks' => ['Foo', 'Foo_', 'FooBar']]);
         $plugin->setLogger($logger);
-        $plugin->handleEvent($event, $queue);
-        $plugin->handleEvent($event, $queue);
-        $plugin->handleEvent($event, $queue);
-        $plugin->handleEvent($event, $queue);
+        $plugin->handleEvent($event1, $queue1);
+        $plugin->handleEvent($event1, $queue1);
+        $plugin->handleEvent($event2, $queue2);
+        $plugin->handleEvent($event1, $queue1);
+        $plugin->handleEvent($event2, $queue2);
+        $plugin->handleEvent($event1, $queue1);
+        $plugin->handleEvent($event2, $queue2);
+        $plugin->handleEvent($event2, $queue2);
+
+        Phake::verify($logger, Phake::times(2))->debug("[AltNick] Switching nick to 'Foo'");
+        Phake::verify($logger, Phake::times(2))->debug("[AltNick] Switching nick to 'Foo_'");
+        Phake::verify($logger, Phake::times(2))->debug("[AltNick] Switching nick to 'FooBar'");
 
         Phake::inOrder(
-            Phake::verify($logger)->debug("[AltNick] Switching nick to 'Foo'"),
-            Phake::verify($queue)->ircNick('Foo'),
-            Phake::verify($connection)->setNickname('Foo'),
+            Phake::verify($queue1)->ircNick('Foo'),
+            Phake::verify($connection1)->setNickname('Foo'),
 
-            Phake::verify($logger)->debug("[AltNick] Switching nick to 'Foo_'"),
-            Phake::verify($queue)->ircNick('Foo_'),
-            Phake::verify($connection)->setNickname('Foo_'),
+            Phake::verify($queue1)->ircNick('Foo_'),
+            Phake::verify($connection1)->setNickname('Foo_'),
 
-            Phake::verify($logger)->debug("[AltNick] Switching nick to 'FooBar'"),
-            Phake::verify($queue)->ircNick('FooBar'),
-            Phake::verify($connection)->setNickname('FooBar'),
+            Phake::verify($queue2)->ircNick('Foo'),
+            Phake::verify($connection2)->setNickname('Foo'),
 
-            Phake::verify($queue)->ircQuit('All specified alternate nicks are in use')
+            Phake::verify($queue1)->ircNick('FooBar'),
+            Phake::verify($connection1)->setNickname('FooBar'),
+
+            Phake::verify($queue2)->ircNick('Foo_'),
+            Phake::verify($connection2)->setNickname('Foo_'),
+
+            Phake::verify($queue1)->ircQuit('All specified alternate nicks are in use'),
+
+            Phake::verify($queue2)->ircNick('FooBar'),
+            Phake::verify($connection2)->setNickname('FooBar'),
+
+            Phake::verify($queue2)->ircQuit('All specified alternate nicks are in use')
         );
     }
 
@@ -170,5 +191,4 @@ class PluginTest extends \PHPUnit_Framework_TestCase
     {
         return Phake::mock('Monolog\Logger');
     }
-
 }

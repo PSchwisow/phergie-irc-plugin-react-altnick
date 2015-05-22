@@ -13,7 +13,9 @@ namespace PSchwisow\Phergie\Plugin\AltNick;
 use ArrayIterator;
 use Phergie\Irc\Bot\React\AbstractPlugin;
 use Phergie\Irc\Bot\React\EventQueueInterface as Queue;
+use Phergie\Irc\ConnectionInterface;
 use Phergie\Irc\Event\EventInterface as Event;
+use SplObjectStorage;
 
 /**
  * Plugin class.
@@ -26,9 +28,16 @@ class Plugin extends AbstractPlugin
     /**
      * Array of alternate nicks to try
      *
-     * @var ArrayIterator
+     * @var array
      */
-    private $iterator;
+    private $nicks;
+
+    /**
+     * One iterator per connection
+     *
+     * @var SplObjectStorage (collection of ArrayIterator)
+     */
+    private $iterators;
 
     /**
      * Accepts plugin configuration.
@@ -79,7 +88,7 @@ class Plugin extends AbstractPlugin
             throw new \InvalidArgumentException('setNicks method did not receive any valid nicks');
         }
 
-        $this->iterator = new ArrayIterator($nicks);
+        $this->nicks = $nicks;
     }
 
     /**
@@ -102,16 +111,31 @@ class Plugin extends AbstractPlugin
      */
     public function handleEvent(Event $event, Queue $queue)
     {
-        if (!$this->iterator->valid()) {
+        $iterator = $this->getIterator($event->getConnection());
+
+        if (!$iterator->valid()) {
             $queue->ircQuit('All specified alternate nicks are in use');
             return;
         }
 
-        $nick = $this->iterator->current();
-        $this->iterator->next();
+        $nick = $iterator->current();
+        $iterator->next();
 
         $this->logger->debug("[AltNick] Switching nick to '$nick'");
         $queue->ircNick($nick);
         $event->getConnection()->setNickname($nick);
+    }
+
+    protected function getIterator(ConnectionInterface $connection)
+    {
+        if (is_null($this->iterators)) {
+            $this->iterators = new SplObjectStorage();
+        }
+
+        if (!$this->iterators->offsetExists($connection)) {
+            $this->iterators[$connection] = new ArrayIterator($this->nicks);
+        }
+
+        return $this->iterators[$connection];
     }
 }
