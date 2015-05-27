@@ -31,7 +31,9 @@ return [
                 'Foo',
                 'Foo_',
                 'FooBar'
-            ]
+            ],
+            // Optional: if primary nickname is in use, reclaim it if it disconnects
+            'recovery' => true,
         ])
     ]
 ];

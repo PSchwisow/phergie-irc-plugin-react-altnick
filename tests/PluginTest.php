@@ -153,6 +153,62 @@ class PluginTest extends \PHPUnit_Framework_TestCase
     }
 
     /**
+     * Tests nick recovery.
+     */
+    public function testHandleNickRecovery()
+    {
+        $connection = $this->getMockConnection();
+        $event = $this->getMockEvent();
+        Phake::when($event)->getConnection()->thenReturn($connection);
+        $userEvent = $this->getMockUserEvent();
+        Phake::when($userEvent)->getConnection()->thenReturn($connection);
+
+        $queue = $this->getMockEventQueue();
+        $logger = $this->getMockLogger();
+
+        $plugin = new Plugin(['nicks' => ['Foo', 'Foo_'], 'recovery' => true]);
+        $plugin->setLogger($logger);
+
+        // Only the first of these should set the primary nickname.
+        Phake::when($event)->getParams()->thenReturn([1 => 'Phergie', 2 => 'Nickname is already in use.']);
+        $plugin->handleEvent($event, $queue);
+        Phake::when($event)->getParams()->thenReturn([1 => 'Foo', 2 => 'Nickname is already in use.']);
+        $plugin->handleEvent($event, $queue);
+
+        // Now disconnect the primary nick.
+        Phake::when($userEvent)->getNick()->thenReturn('Phergie');
+        $plugin->handleQuit($userEvent, $queue);
+
+        Phake::verify($queue)->ircNick('Phergie');
+    }
+
+    /**
+     * Tests handleQuit() with a nick that should be ignored.
+     */
+    public function testHandleQuitIgnoreEvent()
+    {
+        $connection = $this->getMockConnection();
+        $event = $this->getMockUserEvent();
+        Phake::when($event)->getConnection()->thenReturn($connection);
+        $userEvent = $this->getMockUserEvent();
+        Phake::when($userEvent)->getConnection()->thenReturn($connection);
+
+        $queue = $this->getMockEventQueue();
+        $logger = $this->getMockLogger();
+
+        $plugin = new Plugin(['nicks' => ['Foo', 'Foo_'], 'recovery' => true]);
+        $plugin->setLogger($logger);
+
+        Phake::when($event)->getParams()->thenReturn([1 => 'Phergie', 2 => 'Nickname is already in use.']);
+        $plugin->handleEvent($event, $queue);
+
+        Phake::verifyNoFurtherInteraction($queue);
+
+        Phake::when($userEvent)->getNick()->thenReturn('SomeoneElse');
+        $plugin->handleQuit($userEvent, $queue);
+    }
+
+    /**
      * Returns a mock event.
      *
      * @return \Phergie\Irc\Event\EventInterface
@@ -160,6 +216,16 @@ class PluginTest extends \PHPUnit_Framework_TestCase
     protected function getMockEvent()
     {
         return Phake::mock('Phergie\Irc\Event\EventInterface');
+    }
+
+    /**
+     * Returns a mock user event.
+     *
+     * @return \Phergie\Irc\Event\EventInterface
+     */
+    protected function getMockUserEvent()
+    {
+        return Phake::mock('Phergie\Irc\Event\UserEventInterface');
     }
 
     /**

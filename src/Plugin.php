@@ -15,6 +15,7 @@ use Phergie\Irc\Bot\React\AbstractPlugin;
 use Phergie\Irc\Bot\React\EventQueueInterface as Queue;
 use Phergie\Irc\ConnectionInterface;
 use Phergie\Irc\Event\EventInterface as Event;
+use Phergie\Irc\Event\UserEventInterface as UserEvent;
 use SplObjectStorage;
 
 /**
@@ -33,6 +34,20 @@ class Plugin extends AbstractPlugin
     private $nicks;
 
     /**
+     * Whether or not to recover the primary nick if it disconnects
+     *
+     * @var bool
+     */
+    private $recovery = false;
+
+    /**
+     * Primary nick to recover
+     *
+     * @var string|null
+     */
+    private $primaryNick;
+
+    /**
      * One iterator per connection
      *
      * @var SplObjectStorage (collection of ArrayIterator)
@@ -46,6 +61,9 @@ class Plugin extends AbstractPlugin
      *
      * nicks - an array of alternate nicks (at least one is required)
      *
+     * recovery - if true, will change back to the primary nick if it disconnects
+     *            (optional, default false)
+     *
      * @param array $config
      * @throws \InvalidArgumentException
      */
@@ -55,6 +73,9 @@ class Plugin extends AbstractPlugin
             throw new \InvalidArgumentException("Missing required configuration key 'nicks'");
         }
         $this->setNicks($config['nicks']);
+        if (!empty($config['recovery'])) {
+            $this->recovery = true;
+        }
     }
 
     /**
@@ -100,6 +121,7 @@ class Plugin extends AbstractPlugin
     {
         return array(
             'irc.received.err_nicknameinuse' => 'handleEvent',
+            'irc.received.quit' => 'handleQuit',
         );
     }
 
@@ -118,12 +140,35 @@ class Plugin extends AbstractPlugin
             return;
         }
 
+        if ($this->recovery && $this->primaryNick === null) {
+            $params = $event->getParams();
+            $primaryNick = $params[1];
+            $this->logger->debug("[AltNick] Saving '$primaryNick' as primary nick");
+            $this->primaryNick = $primaryNick;
+        }
+
         $nick = $iterator->current();
         $iterator->next();
 
         $this->logger->debug("[AltNick] Switching nick to '$nick'");
         $queue->ircNick($nick);
         $event->getConnection()->setNickname($nick);
+    }
+
+    /**
+     * Handle primary nick recovery.
+     *
+     * @param \Phergie\Irc\Event\UserEventInterface $event
+     * @param \Phergie\Irc\Bot\React\EventQueueInterface $queue
+     */
+    public function handleQuit(UserEvent $event, Queue $queue)
+    {
+        $nick = $event->getNick();
+        if ($this->primaryNick !== null && $nick == $this->primaryNick) {
+            $this->logger->debug("[AltNick] '$nick' disconnected, switching to primary nick");
+            $queue->ircNick($this->primaryNick);
+            $this->primaryNick = null;
+        }
     }
 
     protected function getIterator(ConnectionInterface $connection)
