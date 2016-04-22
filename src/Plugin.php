@@ -119,10 +119,10 @@ class Plugin extends AbstractPlugin
      */
     public function getSubscribedEvents()
     {
-        return array(
+        return [
             'irc.received.err_nicknameinuse' => 'handleEvent',
             'irc.received.quit' => 'handleQuit',
-        );
+        ];
     }
 
     /**

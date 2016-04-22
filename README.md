@@ -11,7 +11,7 @@ The recommended method of installation is [through composer](http://getcomposer.
 ```JSON
 {
     "require": {
-        "pschwisow/phergie-irc-plugin-react-altnick": "dev-master"
+        "pschwisow/phergie-irc-plugin-react-altnick": "~2"
     }
 }
 ```
