@@ -129,25 +129,11 @@ class PluginTest extends \PHPUnit_Framework_TestCase
 
         Phake::inOrder(
             Phake::verify($queue1)->ircNick('Foo'),
-            Phake::verify($connection1)->setNickname('Foo'),
-
             Phake::verify($queue1)->ircNick('Foo_'),
-            Phake::verify($connection1)->setNickname('Foo_'),
-
             Phake::verify($queue2)->ircNick('Foo'),
-            Phake::verify($connection2)->setNickname('Foo'),
-
             Phake::verify($queue1)->ircNick('FooBar'),
-            Phake::verify($connection1)->setNickname('FooBar'),
-
             Phake::verify($queue2)->ircNick('Foo_'),
-            Phake::verify($connection2)->setNickname('Foo_'),
-
             Phake::verify($queue1)->ircQuit('All specified alternate nicks are in use'),
-
-            Phake::verify($queue2)->ircNick('FooBar'),
-            Phake::verify($connection2)->setNickname('FooBar'),
-
             Phake::verify($queue2)->ircQuit('All specified alternate nicks are in use')
         );
     }

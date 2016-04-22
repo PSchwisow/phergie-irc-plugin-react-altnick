@@ -152,7 +152,6 @@ class Plugin extends AbstractPlugin
 
         $this->logger->debug("[AltNick] Switching nick to '$nick'");
         $queue->ircNick($nick);
-        $event->getConnection()->setNickname($nick);
     }
 
     /**
